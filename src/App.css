@@ -9,7 +9,9 @@
   --text-muted: #6b7280;
   --danger: #d9534f;
   --weekend: #cfe3f0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
 }
 
 * {
@@ -321,9 +323,16 @@ tfoot td {
   font-size: 16px;
 }
 
+.months-grid-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .months-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 200px;
+  grid-template-rows: repeat(3, auto);
   gap: 14px;
 }
 
@@ -408,14 +417,16 @@ tfoot td {
 }
 
 @media (max-width: 900px) {
+  .app-shell {
+    padding: 16px 16px 40px;
+  }
   .app-container {
     flex-direction: column;
   }
-  .left-panel {
+  .left-panel,
+  .right-panel {
     position: static;
     width: 100%;
-  }
-  .months-grid {
-    grid-template-columns: repeat(2, 1fr);
+    min-width: 0;
   }
 }
