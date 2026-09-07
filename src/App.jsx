@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import deleteLogo from "../src/public/assets/delete.webp";
@@ -32,7 +32,6 @@ function formatDateISOFromParts(year, monthIndex, day) {
 function formatDateDisplay(isoDate) {
   if (!isoDate) return "-";
   const [y, m, d] = isoDate.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
   return `${pad2(d)} ${MONTH_NAMES[m - 1]} ${y}`;
 }
 
@@ -63,6 +62,17 @@ function sortActivities(list) {
   });
 }
 
+function saveToStorage(departmentName, activities, calendarYear) {
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ departmentName, activities, calendarYear }),
+    );
+  } catch (e) {
+    console.warn("Gagal menyimpan data:", e);
+  }
+}
+
 const emptyForm = {
   nama: "",
   tanggal: "",
@@ -71,17 +81,6 @@ const emptyForm = {
   fungsi: "",
   pendanaan: PENDANAAN_OPTIONS[0],
 };
-
-function loadSavedData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (e) {
-    console.warn("Gagal membaca data tersimpan:", e);
-    return null;
-  }
-}
 
 export default function App() {
   const [departmentName, setDepartmentName] = useState("");
@@ -93,16 +92,20 @@ export default function App() {
   const tableRef = useRef(null);
   const calendarRef = useRef(null);
 
+  // Load saved data once, on mount
   useEffect(() => {
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ departmentName, activities, calendarYear }),
-      );
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      const saved = JSON.parse(raw);
+      if (saved.departmentName) setDepartmentName(saved.departmentName);
+      if (saved.activities) setActivities(saved.activities);
+      if (saved.calendarYear) setCalendarYear(saved.calendarYear);
     } catch (e) {
-      console.warn("Gagal menyimpan data:", e);
+      console.warn("Gagal membaca data tersimpan:", e);
     }
-  }, [departmentName, activities, calendarYear]);
+  }, []);
 
   const totalBudget = useMemo(
     () => activities.reduce((sum, a) => sum + (Number(a.budget) || 0), 0),
@@ -127,6 +130,13 @@ export default function App() {
     years.add(calendarYear);
     return Array.from(years).sort((a, b) => a - b);
   }, [activities, calendarYear]);
+
+  const isFormValid =
+    form.nama.trim() !== "" &&
+    form.tanggal !== "" &&
+    form.waktu !== "" &&
+    parseThousands(form.budget) > 0 &&
+    form.pendanaan !== "";
 
   function handleFormChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -167,23 +177,21 @@ export default function App() {
       pendanaan: form.pendanaan,
     };
 
-    setActivities((prev) => sortActivities([...prev, newActivity]));
-    setForm(emptyForm);
-
+    const updatedActivities = sortActivities([...activities, newActivity]);
     const activityYear = Number(form.tanggal.split("-")[0]);
+
+    setActivities(updatedActivities);
+    setForm(emptyForm);
     setCalendarYear(activityYear);
+
+    saveToStorage(departmentName, updatedActivities, activityYear);
   }
 
   function handleDeleteActivity(id) {
-    setActivities((prev) => prev.filter((a) => a.id !== id));
+    const updatedActivities = activities.filter((a) => a.id !== id);
+    setActivities(updatedActivities);
+    saveToStorage(departmentName, updatedActivities, calendarYear);
   }
-
-  const isFormValid =
-    form.nama.trim() !== "" &&
-    form.tanggal !== "" &&
-    form.waktu !== "" &&
-    parseThousands(form.budget) > 0 &&
-    form.pendanaan !== "";
 
   async function exportTablePDF() {
     if (!tableRef.current) return;
@@ -194,7 +202,7 @@ export default function App() {
     });
     const imgData = canvas.toDataURL("image/png");
 
-    // A4 portrait in mm, with a small margin
+    // A4 landscape in mm, with a small margin
     const pdf = new jsPDF({
       orientation: "landscape",
       unit: "mm",
