@@ -1,4 +1,5 @@
 :root {
+  --white: #ffffff;
   --navy: #0f2544;
   --gold: #c8932a;
   --gold-light: #e8b94a;
@@ -145,6 +146,15 @@ textarea {
   transition: opacity 0.15s ease;
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn:disabled:hover {
+  opacity: 0.5;
+}
+
 .btn:hover {
   opacity: 0.9;
 }
@@ -156,9 +166,16 @@ textarea {
 }
 
 .btn-secondary {
-  background: var(--navy);
-  color: #fff;
+  background: var(--white);
+  border: 1px solid var(--navy);
+  color: var(--navy);
   flex: 1;
+}
+
+.btn-red {
+  background: var(--danger);
+  color: #fff;
+  width: 100%;
 }
 
 .error-message {
@@ -188,7 +205,7 @@ textarea {
 .activity-item {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -227,6 +244,19 @@ textarea {
 
 .btn-delete:hover {
   background: #fdecea;
+}
+
+.btn-reset-wrapper {
+  margin: 15px 0;
+}
+
+.delete-icon {
+  object-fit: contain;
+  width: 24px;
+}
+
+.required-mark {
+  color: var(--danger);
 }
 
 /* TABLE PREVIEW */
